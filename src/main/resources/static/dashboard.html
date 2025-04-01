@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-gray-900">Task Manager</span>
+                </div>
+                <div class="flex items-center">
+                    <button id="logoutBtn" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">My Tasks</h1>
+            <button id="addTaskBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                <i class="fas fa-plus mr-2"></i>Add Task
+            </button>
+        </div>
+
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center space-x-4">
+                    <select id="statusFilter" class="border rounded-md px-3 py-2">
+                        <option value="ALL">All Tasks</option>
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                    <input type="date" id="dateFilter" class="border rounded-md px-3 py-2">
+                    <button id="applyFilterBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md">
+                        Apply
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Tasks will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div class="text-sm text-gray-500">
+                    Showing <span id="startItem">1</span> to <span id="endItem">10</span> of <span id="totalItems">0</span> tasks
+                </div>
+                <div class="flex space-x-2">
+                    <button id="prevPageBtn" class="px-3 py-1 border rounded-md text-gray-700 disabled:opacity-50" disabled>
+                        Previous
+                    </button>
+                    <button id="nextPageBtn" class="px-3 py-1 border rounded-md text-gray-700 disabled:opacity-50" disabled>
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <h2 id="modalTitle" class="text-xl font-semibold mb-4">Add New Task</h2>
+                <form id="taskForm">
+                    <input type="hidden" id="taskId">
+                    <div class="mb-4">
+                        <label for="taskTitle" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="taskTitle" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="taskDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="taskDescription" rows="3"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="taskDueDate" class="block text-sm font-medium text-gray-700">Due Date</label>
+                        <input type="date" id="taskDueDate" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="taskStatus" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="taskStatus" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="TODO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelTaskBtn" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalTasks = 0;
+
+        // DOM elements
+        const taskTableBody = document.getElementById('taskTableBody');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const startItemSpan = document.getElementById('startItem');
+        const endItemSpan = document.getElementById('endItem');
+        const totalItemsSpan = document.getElementById('totalItems');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFilter = document.getElementById('dateFilter');
+        const applyFilterBtn = document.getElementById('applyFilterBtn');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const taskModal = document.getElementById('taskModal');
+        const taskForm = document.getElementById('taskForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const taskIdInput = document.getElementById('taskId');
+        const taskTitleInput = document.getElementById('taskTitle');
+        const taskDescriptionInput = document.getElementById('taskDescription');
+        const taskDueDateInput = document.getElementById('taskDueDate');
+        const taskStatusInput = document.getElementById('taskStatus');
+        const cancelTaskBtn = document.getElementById('cancelTaskBtn');
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadTasks();
+        });
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadTasks();
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage * pageSize < totalTasks) {
+                currentPage++;
+                loadTasks();
+            }
+        });
+
+        applyFilterBtn.addEventListener('click', () => {
+            currentPage = 1;
+            loadTasks();
+        });
+
+        addTaskBtn.addEventListener('click', () => {
+            openTaskModal();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        });
+
+        taskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveTask();
+        });
+
+        cancelTaskBtn.addEventListener('click', () => {
+            closeTaskModal();
+        });
+
+        // Functions
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadTasks() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            let url = `http://localhost:8080/api/tasks?page=${currentPage - 1}&size=${pageSize}`;
+            
+            const status = statusFilter.value;
+            if (status !== 'ALL') {
+                url = `http://localhost:8080/api/tasks/status/${status}`;
+            }
+
+            const date = dateFilter.value;
+            if (date) {
+                const dateObj = new Date(date);
+                const timestamp = dateObj.getTime();
+                url = `http://localhost:8080/api/tasks/due-date?start=${timestamp}&end=${timestamp + 86400000}`;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const tasks = await response.json();
+                    renderTasks(Array.isArray(tasks) ? tasks : tasks.content);
+                    
+                    if (!Array.isArray(tasks)) {
+                        totalTasks = tasks.totalElements;
+                        updatePagination();
+                    } else {
+                        totalTasks = tasks.length;
+                    }
+                } else if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        function renderTasks(tasks) {
+            taskTableBody.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                        No tasks found
+                    </td>
+                `;
+                taskTableBody.appendChild(row);
+                return;
+            }
+
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">${task.title}</div>
+                        <div class="text-sm text-gray-500 truncate max-w-xs">${task.description || ''}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${new Date(task.dueDate).toLocaleDateString()}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${getStatusClass(task.status)}">
+                            ${formatStatus(task.status)}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 mr-3 edit-btn" data-id="${task.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${task.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                taskTableBody.appendChild(row);
+            });
+
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    editTask(taskId);
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    deleteTask(taskId);
+                });
+            });
+        }
+
+        function updatePagination() {
+            startItemSpan.textContent = ((currentPage - 1) * pageSize) + 1;
+            endItemSpan.textContent = Math.min(currentPage * pageSize, totalTasks);
+            totalItemsSpan.textContent = totalTasks;
+
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage * pageSize >= totalTasks;
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'TODO': return 'bg-yellow-100 text-yellow-800';
+                case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800';
+                case 'COMPLETED': return 'bg-green-100 text-green-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function formatStatus(status) {
+            switch (status) {
+                case 'TODO': return 'To Do';
+                case 'IN_PROGRESS': return 'In Progress';
+                case 'COMPLETED': return 'Completed';
+                default: return status;
+            }
+        }
+
+        function openTaskModal(task = null) {
+            if (task) {
+                modalTitle.textContent = 'Edit Task';
+                taskIdInput.value = task.id;
+                taskTitleInput.value = task.title;
+                taskDescriptionInput.value = task.description || '';
+                taskDueDateInput.value = new Date(task.dueDate).toISOString().split('T')[0];
+                taskStatusInput.value = task.status;
+            } else {
+                modalTitle.textContent = 'Add New Task';
+                taskForm.reset();
+                const today = new Date();
+                taskDueDateInput.value = today.toISOString().split('T')[0];
+                taskStatusInput.value = 'TODO';
+            }
+            taskModal.classList.remove('hidden');
+        }
+
+        function closeTaskModal() {
+            taskModal.classList.add('hidden');
+        }
+
+        async function editTask(taskId) {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`http://localhost:8080/api/tasks/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const task = await response.json();
+                    openTaskModal(task);
+                }
+            } catch (error) {
+                console.error('Error fetching task:', error);
+            }
+        }
+
+        async function saveTask() {
+            const token = localStorage.getItem('token');
+            const task = {
+                title: taskTitleInput.value,
+                description: taskDescriptionInput.value,
+                dueDate: new Date(taskDueDateInput.value).getTime(),
+                status: taskStatusInput.value
+            };
+
+            const url = taskIdInput.value 
+                ? `http://localhost:8080/api/tasks/${taskIdInput.value}`
+                : 'http://localhost:8080/api/tasks';
+
+            const method = taskIdInput.value ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(task)
+                });
+
+                if (response.ok) {
+                    closeTaskModal();
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Error saving task:', error);
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`http://localhost:8080/api/tasks/${taskId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+    </script>
+</body>
+</html>
